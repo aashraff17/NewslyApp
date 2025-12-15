@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/categories.dart';
-import '../../providers/news_provider.dart';
-import 'package:provider/provider.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -29,10 +28,7 @@ class CategoriesPage extends StatelessWidget {
             final category = newsCategories[index];
             return InkWell(
               onTap: () {
-                context
-                    .read<NewsProvider>()
-                    .changeCategory(category.apiValue);
-                Navigator.pop(context);
+                context.go('/category/${category.apiValue}');
               },
               child: Card(
                 shape: RoundedRectangleBorder(

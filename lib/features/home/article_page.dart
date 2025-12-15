@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../data/model/article_model.dart';
 
 class ArticlePage extends StatelessWidget {
-  final dynamic article;
+  final Article article;
 
   const ArticlePage({super.key, required this.article});
 
@@ -16,8 +17,12 @@ class ArticlePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (article.imageUrl.isNotEmpty)
-              Image.network(article.imageUrl),
+            if (article.imageUrl != null && article.imageUrl!.isNotEmpty)
+              Image.network(
+                article.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(),
+              ),
             const SizedBox(height: 16),
             Text(
               article.title,
@@ -25,7 +30,7 @@ class ArticlePage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              article.description,
+              article.description ?? '',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

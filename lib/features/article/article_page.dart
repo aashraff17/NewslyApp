@@ -17,44 +17,40 @@ class ArticlePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5FA8A3),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.open_in_browser),
-            onPressed: () => _openArticle(article.url),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(article.title ?? '')),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (article.imageUrl.isNotEmpty)
-              Image.network(article.imageUrl, fit: BoxFit.cover),
+            if (article.imageUrl != null && article.imageUrl!.isNotEmpty)
+              Image.network(
+                article.imageUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(),
+              ),
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    article.title,
+                    article.title ?? '',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
-                    article.source,
-                    style: const TextStyle(color: Colors.black54),
+                    article.description ?? '',
+                    style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    article.description,
-                    style: const TextStyle(fontSize: 16),
+                    article.content ?? '',
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),

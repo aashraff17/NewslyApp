@@ -6,7 +6,7 @@ import '../bookmarks/bookmarks_page.dart';
 import '../profile/profile_page.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  MainLayout({super.key});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -18,7 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _pages = [
     const HomePage(),
     const CategoriesPage(),
-    const ChatbotPage(),
+     ChatbotPage(),
     const BookmarksPage(),
     const ProfilePage(),
   ];

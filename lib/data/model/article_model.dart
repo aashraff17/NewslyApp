@@ -1,28 +1,33 @@
 class Article {
   final String title;
-  final String description;
-  final String imageUrl;
-  final String source;
+  final String? description;
+  final String? imageUrl;
+  final String? source;
   final String url;
-  final DateTime publishedAt;
+  final DateTime? publishedAt;
+  final String? content;
 
   Article({
     required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.source,
+    this.description,
+    this.imageUrl,
+    this.source,
     required this.url,
-    required this.publishedAt,
+    this.publishedAt,
+    this.content,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
     return Article(
       title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      imageUrl: json['image'] ?? '',
-      source: json['source']['name'] ?? '',
+      description: json['description'],
+      imageUrl: json['urlToImage'],
+      source: json['source']?['name'],
       url: json['url'],
-      publishedAt: DateTime.parse(json['publishedAt']),
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.parse(json['publishedAt'])
+          : null,
+      content: json['content'],
     );
   }
 }

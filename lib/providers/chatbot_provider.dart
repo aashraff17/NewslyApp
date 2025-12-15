@@ -1,56 +1,42 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../features/chatbot/models/chat_message.dart';
 
 class ChatbotProvider extends ChangeNotifier {
-  final List<ChatMessage> messages = [];
-  bool isLoading = false;
+  final List<ChatMessage> _messages = [];
+  bool _isLoading = false;
 
-  final String _apiKey = 'AIzaSyDfLyIVcLZkcH9G2F3FY1w4LFCzQLkVdqo';
+  List<ChatMessage> get messages => _messages;
+  bool get isLoading => _isLoading;
 
-  Future<void> sendMessage(String userMessage) async {
-    messages.add(ChatMessage(text: userMessage, isUser: true));
-    isLoading = true;
+  Future<void> sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+
+    _messages.add(
+      ChatMessage(text: text, isUser: true),
+    );
+    _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$_apiKey',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {"text": userMessage}
-              ]
-            }
-          ]
-        }),
-      );
+      // TODO: Gemini API call here
+      await Future.delayed(const Duration(seconds: 1));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final botText =
-        data['candidates'][0]['content']['parts'][0]['text'];
-
-        messages.add(ChatMessage(text: botText, isUser: false));
-      } else {
-        messages.add(ChatMessage(
-          text: 'Sorry, something went wrong.',
+      _messages.add(
+        ChatMessage(
+          text: "Sorry, something went wrong.",
           isUser: false,
-        ));
-      }
-    } catch (_) {
-      messages.add(ChatMessage(
-        text: 'Sorry, something went wrong.',
-        isUser: false,
-      ));
+        ),
+      );
+    } catch (e) {
+      _messages.add(
+        ChatMessage(
+          text: "Error connecting to chatbot.",
+          isUser: false,
+        ),
+      );
     }
 
-    isLoading = false;
+    _isLoading = false;
     notifyListeners();
   }
 }

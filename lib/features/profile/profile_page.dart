@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_auth_provider.dart';
-import '../../providers/theme_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -41,13 +40,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text(
           'This action is permanent and cannot be undone.\n\n'
-          'Are you sure you want to delete your account?',
+          'Are you sure?',
         ),
         actions: [
           TextButton(
@@ -65,35 +64,27 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirm == true) {
       _deleteAccount(context);
     }
   }
 
   Future<void> _deleteAccount(BuildContext context) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      await user?.delete();
+      await FirebaseAuth.instance.currentUser!.delete();
 
       if (mounted) {
         context.go('/login');
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        if (e.code == 'requires-recent-login') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Please log in again to delete your account.',
-              ),
+      if (e.code == 'requires-recent-login') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please log in again before deleting your account.',
             ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Error')),
-          );
-        }
+          ),
+        );
       }
     }
   }
@@ -101,6 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final authProvider = context.watch<AppAuthProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFF5FA8A3),
@@ -109,95 +101,98 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: _pickProfileImage,
-              child: CircleAvatar(
-                radius: 45,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
-                    : const AssetImage('assets/images/profile_avatar.png')
-                as ImageProvider,
-                child: const Align(
-                  alignment: Alignment.bottomRight,
-                  child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.edit, size: 16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: _pickProfileImage,
+                child: CircleAvatar(
+                  radius: 45,
+                  backgroundImage: user?.photoURL != null
+                      ? NetworkImage(user!.photoURL!)
+                      : const AssetImage('assets/images/profile_avatar.png')
+                          as ImageProvider,
+                  child: const Align(
+                    alignment: Alignment.bottomRight,
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.edit, size: 16),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              user?.displayName ?? 'Newsly User',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              user?.email ?? '',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            TextButton(
-              onPressed: () => context.push('/edit-profile'),
-              child: const Text('Edit Profile'),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              child: SwitchListTile(
-                title: const Text('Dark Mode'),
-                value: context.watch<ThemeProvider>().isDark,
-                onChanged: (_) {
-                  context.read<ThemeProvider>().toggleTheme();
-                },
+              const SizedBox(height: 12),
+              Text(
+                user?.displayName ?? 'Newsly User',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
-            Card(
-              child: ListTile(
-                title: const Text('Language'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => context.push('/language'),
+              Text(
+                user?.email ?? '',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-            ),
-            Card(
-              child: ListTile(
-                title: const Text('Change Password'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => context.push('/change-password'),
+              TextButton(
+                onPressed: () => context.push('/edit-profile'),
+                child: const Text('Edit Profile'),
               ),
-            ),
-            Card(
-              child: ListTile(
-                title: const Text('Terms & Conditions'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => context.push('/terms'),
-              ),
-            ),
-            Card(
-              child: ListTile(
-                title: const Text('Sign Out'),
-                trailing: const Icon(Icons.logout),
-                onTap: () async {
+              TextButton(
+                onPressed: () async {
                   await context.read<AppAuthProvider>().signOut();
                   if (mounted) {
                     context.go('/login');
                   }
                 },
+                child: const Text('Sign Out'),
               ),
-            ),
-            Card(
-              child: ListTile(
-                title: const Text(
-                  'Delete Account',
-                  style: TextStyle(color: Colors.red),
+              const SizedBox(height: 24),
+              Card(
+                child: ListTile(
+                  title: const Text('Language'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () => context.push('/language'),
                 ),
-                trailing: const Icon(Icons.delete, color: Colors.red),
-                onTap: () => _confirmDeleteAccount(context),
               ),
-            ),
-          ],
+              Card(
+                child: ListTile(
+                  title: const Text('Change Password'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () => context.push('/change-password'),
+                ),
+              ),
+              Card(
+                child: ListTile(
+                  title: const Text('Terms & Conditions'),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () => context.push('/terms'),
+                ),
+              ),
+              Card(
+                child: ListTile(
+                  title: const Text('Sign Out'),
+                  trailing: const Icon(Icons.logout),
+                  onTap: () async {
+                    await context.read<AppAuthProvider>().signOut();
+                    if (mounted) {
+                      context.go('/login');
+                    }
+                  },
+                ),
+              ),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    'Delete Account',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () => _confirmDeleteAccount(context),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

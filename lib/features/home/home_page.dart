@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/news_provider.dart';
 import '../../core/constants/categories.dart';
 import '../../core/constants/countries.dart';
 import '../../providers/bookmark_provider.dart';
-import 'article_page.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,13 +19,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     Future.microtask(
-          () => context.read<NewsProvider>().fetchNews(),
+      () => context.read<NewsProvider>().fetchNews(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final newsProvider = context.watch<NewsProvider>();
+    final articles = newsProvider.articles;
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
@@ -90,105 +92,182 @@ class _HomePageState extends State<HomePage> {
             child: newsProvider.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : isWide
-                ? GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.8,
-              ),
-              itemCount: newsProvider.articles.length,
-              itemBuilder: (_, index) {
-                return _NewsCard(
-                    article: newsProvider.articles[index]);
-              },
-            )
-                : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: newsProvider.articles.length,
-              itemBuilder: (_, index) {
-                return _NewsCard(
-                    article: newsProvider.articles[index]);
-              },
-            ),
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.8,
+                        ),
+                        itemCount: articles.length,
+                        itemBuilder: (context, index) {
+                          final article = articles[index];
+
+                          if (article.imageUrl == null ||
+                              article.imageUrl!.isEmpty) {
+                            return const SizedBox();
+                          }
+
+                          final bookmarkProvider =
+                              context.watch<BookmarkProvider>();
+                          final isSaved =
+                              bookmarkProvider.isBookmarked(article);
+
+                          return InkWell(
+                            onTap: () {
+                              context.push('/article', extra: article);
+                            },
+                            child: Card(
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Image.network(
+                                    article.imageUrl!,
+                                    height: 140,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        const SizedBox(),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                article.title,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                bookmarkProvider
+                                                    .toggleBookmark(article);
+                                              },
+                                              icon: Icon(isSaved
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border),
+                                            )
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          article.description ?? '',
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: articles.length,
+                        itemBuilder: (context, index) {
+                          final article = articles[index];
+
+                          if (article.imageUrl == null ||
+                              article.imageUrl!.isEmpty) {
+                            return const SizedBox();
+                          }
+
+                          final bookmarkProvider =
+                              context.watch<BookmarkProvider>();
+                          final isSaved =
+                              bookmarkProvider.isBookmarked(article);
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: InkWell(
+                              onTap: () {
+                                context.push('/article', extra: article);
+                              },
+                              child: Card(
+                                clipBehavior: Clip.antiAlias,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Image.network(
+                                      article.imageUrl!,
+                                      height: 160,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const SizedBox(),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  article.title,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  bookmarkProvider
+                                                      .toggleBookmark(article);
+                                                },
+                                                icon: Icon(isSaved
+                                                    ? Icons.bookmark
+                                                    : Icons.bookmark_border),
+                                              )
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            article.description ?? '',
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _NewsCard extends StatelessWidget {
-  final article;
-
-  const _NewsCard({required this.article});
-
-  @override
-  Widget build(BuildContext context) {
-    final bookmarkProvider = context.watch<BookmarkProvider>();
-    final isSaved = bookmarkProvider.isBookmarked(article);
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ArticlePage(article: article),
-          ),
-        );
-      },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (article.imageUrl.isNotEmpty)
-              Image.network(
-                article.imageUrl,
-                height: 140,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          article.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          bookmarkProvider.toggleBookmark(article);
-                        },
-                        icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    article.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
