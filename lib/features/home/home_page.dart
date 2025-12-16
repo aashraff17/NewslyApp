@@ -18,10 +18,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => context.read<NewsProvider>().fetchNews(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NewsProvider>().fetchNews();
+    });
   }
+
+
 
   @override
   Widget build(BuildContext context) {

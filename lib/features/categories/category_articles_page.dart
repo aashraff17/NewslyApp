@@ -24,41 +24,48 @@ class _CategoryArticlesPageState extends State<CategoryArticlesPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<NewsProvider>();
-
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final articles = provider.articles;
 
-    return ListView.builder(
-      itemCount: articles.length,
-      itemBuilder: (_, index) {
-        final article = articles[index];
-
-        if (article.imageUrl == null || article.imageUrl!.isEmpty) {
-          return const SizedBox(); // removes no-image news ✅
-        }
-
-        return ListTile(
-          leading: Image.network(
-            article.imageUrl!,
-            width: 80,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const SizedBox(),
-          ),
-          title: Text(article.title),
-          subtitle: Text(article.description ?? ''),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ArticlePage(article: article),
-              ),
-            );
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.category),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
           },
-        );
-      },
+        ),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: articles.length,
+        itemBuilder: (context, index) {
+          final article = articles[index];
+
+          return ListTile(
+            leading: (article.imageUrl ?? '').isNotEmpty
+                ? Image.network(
+              article.imageUrl!,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+            )
+                : const SizedBox(width: 80, height: 80),
+            title: Text(article.title ?? ''),
+            subtitle: Text(article.description ?? ''),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ArticlePage(article: article),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
+
+
 }

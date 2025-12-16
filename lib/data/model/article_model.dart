@@ -3,8 +3,8 @@ class Article {
   final String? description;
   final String? imageUrl;
   final String? source;
-  final String url;
-  final DateTime? publishedAt;
+  final String url;  final DateTime? publishedAt;
+
   final String? content;
 
   Article({
@@ -12,7 +12,7 @@ class Article {
     this.description,
     this.imageUrl,
     this.source,
-    required this.url,
+    required this.url, // 👈 REQUIRED
     this.publishedAt,
     this.content,
   });

@@ -57,14 +57,18 @@ class _EmptyBookmarks extends StatelessWidget {
   }
 }
 
-// 3️⃣ BOOKMARK ITEM WIDGET  ✅ THIS IS WHAT YOU ASKED ABOUT
+// 3️⃣ BOOKMARK ITEM WIDGET ✅ FIXED SAFELY
 class _BookmarkItem extends StatelessWidget {
-  final article;
+  final dynamic article;
 
   const _BookmarkItem({required this.article});
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = article.imageUrl ?? '';
+    final title = article.title ?? 'No title';
+    final source = article.source ?? 'Unknown source';
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -78,12 +82,18 @@ class _BookmarkItem extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: article.imageUrl.isNotEmpty
+            child: imageUrl.isNotEmpty
                 ? Image.network(
-              article.imageUrl,
+              imageUrl,
               width: 80,
               height: 80,
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 80,
+                height: 80,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.image_not_supported),
+              ),
             )
                 : Container(
               width: 80,
@@ -98,7 +108,7 @@ class _BookmarkItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  article.source,
+                  source,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.black54,
@@ -106,7 +116,7 @@ class _BookmarkItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  article.title,
+                  title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -120,9 +130,7 @@ class _BookmarkItem extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.bookmark),
             onPressed: () {
-              context
-                  .read<BookmarkProvider>()
-                  .toggleBookmark(article);
+              context.read<BookmarkProvider>().toggleBookmark(article);
             },
           ),
         ],
