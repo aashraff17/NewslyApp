@@ -212,6 +212,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
 
+                    // ✅ USAGE ANALYTICS TILE (FOR DOCTOR'S REQUEST)
+                    _buildProfileTile(
+                      Icons.analytics_outlined,
+                      'Usage Analytics',
+                          () => context.push('/dashboard'),
+                      color: Colors.blueAccent,
+                    ),
+
                     const Padding(padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), child: Divider()),
 
                     _buildSectionHeader('Account'),
