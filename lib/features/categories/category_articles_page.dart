@@ -42,7 +42,15 @@ class _CategoryArticlesPageState extends State<CategoryArticlesPage> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // This checks if there is a page to go back to
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // If the user refreshed the browser or entered the URL directly
+              context.go('/home');
+            }
+          },
         ),
       ),
       body: Container(

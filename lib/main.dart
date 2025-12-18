@@ -9,7 +9,7 @@ import 'providers/bookmark_provider.dart';
 import 'providers/chatbot_provider.dart';
 import 'providers/language_provider.dart';
 import 'routing/app_router.dart';
-import 'core/theme/app_theme.dart'; // Import your new theme file
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,16 +30,17 @@ class NewslyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChatbotProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      // REMOVED the Consumer<AppAuthProvider> here
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        routerConfig: AppRouter.router,
-        // Only one theme now
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: const Color(0xFF5FA8A3),
-          scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-        ),
+      child: Consumer<AppAuthProvider>(
+        builder: (context, auth, child) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            routerConfig: AppRouter.router,
+            // Logic to switch between Light and Dark
+            themeMode: auth.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+          );
+        },
       ),
     );
   }

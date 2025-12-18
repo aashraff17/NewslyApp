@@ -99,16 +99,23 @@ class _EmptyBookmarks extends StatelessWidget {
               style: TextStyle(color: Colors.grey[600], height: 1.5),
             ),
             const SizedBox(height: 32),
+// Inside your BookmarksPage build method
             ElevatedButton(
-              onPressed: () => context.go('/home'),
+              onPressed: () {
+                // This takes the user back to the MainLayout/Home page
+                context.go('/home');
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5FA8A3),
+                backgroundColor: const Color(0xFF5FA8A3), // Your brand color
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: const Text("Start Browsing", style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
+              child: const Text(
+                'Start Browsing',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            )
           ],
         ),
       ),

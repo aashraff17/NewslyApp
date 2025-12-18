@@ -18,13 +18,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
-      // NOTE: This is a placeholder. In a real app, you would upload
-      // the image to a service like Firebase Storage and get the URL.
+      // NOTE: In a real app, upload to Firebase Storage first.
       final url =
           'https://api.dicebear.com/7.x/initials/png?seed=${DateTime.now().millisecondsSinceEpoch}';
 
       try {
         await FirebaseAuth.instance.currentUser?.updatePhotoURL(url);
+        // Refresh local user data
+        await FirebaseAuth.instance.currentUser?.reload();
         if (mounted) {
           setState(() {});
         }
@@ -89,11 +90,13 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final auth = context.watch<AppAuthProvider>(); // Watch the Auth Provider
     const primaryColor = Color(0xFF5FA8A3);
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: primaryColor,
+      // Dynamic background color based on theme
+      backgroundColor: isDark ? const Color(0xFF121212) : primaryColor,
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
@@ -102,7 +105,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: Column(
         children: [
-          // 1. IDENTITY HEADER
           // 1. IDENTITY HEADER
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -114,19 +116,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[850] : Colors.white,
                           shape: BoxShape.circle,
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundColor: Colors.grey[200], // The color you were seeing
-                          // ✅ FIXED LOGIC BELOW
+                          backgroundColor: Colors.grey[300],
                           backgroundImage: (user?.photoURL != null && user!.photoURL!.isNotEmpty)
                               ? NetworkImage(user.photoURL!) as ImageProvider
                               : const AssetImage('assets/images/profile_avatar.png'),
-
-                          // If the image fails to load, this child shows an icon
                           onBackgroundImageError: (exception, stackTrace) {
                             debugPrint('Error loading profile image: $exception');
                           },
@@ -140,12 +139,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         right: 0,
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(blurRadius: 4, color: Colors.black26)],
+                            boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
                           ),
-                          child: const Icon(Icons.camera_alt_rounded, size: 16, color: Color(0xFF5FA8A3)),
+                          child: const Icon(Icons.camera_alt_rounded, size: 16, color: primaryColor),
                         ),
                       ),
                     ],
@@ -168,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -187,6 +186,32 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildProfileTile(Icons.language_rounded, 'Language', () => context.push('/language')),
                     _buildProfileTile(Icons.lock_outline_rounded, 'Change Password', () => context.push('/change-password')),
 
+                    // ✅ DARK MODE TOGGLE TILE
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          auth.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                          color: primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                      title: const Text(
+                        "Dark Mode",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: Switch(
+                        value: auth.isDarkMode,
+                        activeColor: primaryColor,
+                        onChanged: (value) => auth.toggleTheme(),
+                      ),
+                    ),
+
                     const Padding(padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), child: Divider()),
 
                     _buildSectionHeader('Account'),
@@ -195,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Icons.logout_rounded,
                       'Sign Out',
                           () async {
-                        await context.read<AppAuthProvider>().signOut();
+                        await auth.signOut();
                         if (mounted) context.go('/login');
                       },
                       color: primaryColor,
@@ -240,7 +265,10 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       title: Text(
         title,
-        style: TextStyle(fontWeight: FontWeight.w600, color: color ?? Colors.black87),
+        style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: color ?? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87)
+        ),
       ),
       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
     );

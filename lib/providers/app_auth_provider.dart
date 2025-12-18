@@ -38,4 +38,13 @@ class AppAuthProvider extends ChangeNotifier {
     await user?.delete();
     notifyListeners();
   }
-}
+  // ... your existing code ...
+
+  bool _isDarkMode = false;
+  bool get isDarkMode => _isDarkMode;
+
+  void toggleTheme() {
+  _isDarkMode = !_isDarkMode;
+  notifyListeners(); // This tells the Consumer in main.dart to rebuild
+  }
+  }
