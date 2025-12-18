@@ -25,7 +25,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
       try {
         await FirebaseAuth.instance.currentUser?.updatePhotoURL(url);
-        // Rebuild the widget to show the new image
         if (mounted) {
           setState(() {});
         }
@@ -43,22 +42,25 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text(
           'This action is permanent and cannot be undone.\n\n'
-          'Are you sure?',
+              'Are you sure you want to delete your Newsly account?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -72,18 +74,13 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _deleteAccount(BuildContext context) async {
     try {
       await FirebaseAuth.instance.currentUser!.delete();
-
       if (mounted) {
         context.go('/login');
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
+      if (e.code == 'requires-recent-login' && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Please log in again before deleting your account.',
-            ),
-          ),
+          const SnackBar(content: Text('Please log in again before deleting your account.')),
         );
       }
     }
@@ -92,109 +89,160 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final authProvider = context.watch<AppAuthProvider>();
+    const primaryColor = Color(0xFF5FA8A3);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF5FA8A3),
+      backgroundColor: primaryColor,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: _pickProfileImage,
-                child: CircleAvatar(
-                  radius: 45,
-                  backgroundImage: user?.photoURL != null
-                      ? NetworkImage(user!.photoURL!)
-                      : const AssetImage('assets/images/profile_avatar.png')
-                          as ImageProvider,
-                  child: const Align(
-                    alignment: Alignment.bottomRight,
-                    child: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.edit, size: 16),
-                    ),
+      body: Column(
+        children: [
+          // 1. IDENTITY HEADER
+          // 1. IDENTITY HEADER
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _pickProfileImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[200], // The color you were seeing
+                          // ✅ FIXED LOGIC BELOW
+                          backgroundImage: (user?.photoURL != null && user!.photoURL!.isNotEmpty)
+                              ? NetworkImage(user.photoURL!) as ImageProvider
+                              : const AssetImage('assets/images/profile_avatar.png'),
+
+                          // If the image fails to load, this child shows an icon
+                          onBackgroundImageError: (exception, stackTrace) {
+                            debugPrint('Error loading profile image: $exception');
+                          },
+                          child: (user?.photoURL == null || user!.photoURL!.isEmpty)
+                              ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                              : null,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(blurRadius: 4, color: Colors.black26)],
+                          ),
+                          child: const Icon(Icons.camera_alt_rounded, size: 16, color: Color(0xFF5FA8A3)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                user?.displayName ?? 'Newsly User',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                user?.email ?? '',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              TextButton(
-                onPressed: () => context.push('/edit-profile'),
-                child: const Text('Edit Profile'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await context.read<AppAuthProvider>().signOut();
-                  if (mounted) {
-                    context.go('/login');
-                  }
-                },
-                child: const Text('Sign Out'),
-              ),
-              const SizedBox(height: 24),
-              Card(
-                child: ListTile(
-                  title: const Text('Language'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => context.push('/language'),
+                const SizedBox(height: 16),
+                Text(
+                  user?.displayName ?? 'Newsly User',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                 ),
-              ),
-              Card(
-                child: ListTile(
-                  title: const Text('Change Password'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => context.push('/change-password'),
+                Text(
+                  user?.email ?? '',
+                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8)),
                 ),
-              ),
-              Card(
-                child: ListTile(
-                  title: const Text('Terms & Conditions'),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => context.push('/terms'),
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  title: const Text('Sign Out'),
-                  trailing: const Icon(Icons.logout),
-                  onTap: () async {
-                    await context.read<AppAuthProvider>().signOut();
-                    if (mounted) {
-                      context.go('/login');
-                    }
-                  },
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text(
-                    'Delete Account',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () => _confirmDeleteAccount(context),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+
+          // 2. SETTINGS SHEET
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  children: [
+                    _buildSectionHeader('General Settings'),
+                    _buildProfileTile(Icons.person_outline_rounded, 'Edit Profile', () => context.push('/edit-profile')),
+                    _buildProfileTile(Icons.language_rounded, 'Language', () => context.push('/language')),
+                    _buildProfileTile(Icons.lock_outline_rounded, 'Change Password', () => context.push('/change-password')),
+
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), child: Divider()),
+
+                    _buildSectionHeader('Account'),
+                    _buildProfileTile(Icons.description_outlined, 'Terms & Conditions', () => context.push('/terms')),
+                    _buildProfileTile(
+                      Icons.logout_rounded,
+                      'Sign Out',
+                          () async {
+                        await context.read<AppAuthProvider>().signOut();
+                        if (mounted) context.go('/login');
+                      },
+                      color: primaryColor,
+                    ),
+                    _buildProfileTile(
+                      Icons.delete_outline_rounded,
+                      'Delete Account',
+                          () => _confirmDeleteAccount(context),
+                      color: Colors.red,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Colors.grey),
+      ),
+    );
+  }
+
+  Widget _buildProfileTile(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: (color ?? const Color(0xFF5FA8A3)).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color ?? const Color(0xFF5FA8A3), size: 22),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w600, color: color ?? Colors.black87),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
     );
   }
 }

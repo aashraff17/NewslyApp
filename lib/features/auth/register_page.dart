@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../core/utils/validators.dart';
+import '../../core/utils/validators.dart'; // Using the class-based Validators
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,114 +18,174 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF5FA8A3); // Main Brand Color
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF5FA8A3),
+      backgroundColor: primaryColor,
       body: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Container(
-            width: 420,
-            padding: const EdgeInsets.all(24),
+            constraints: const BoxConstraints(maxWidth: 450), // Responsive Web Width
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  // 1. BRANDING HEADER
+                  Center(
+                    child: Column(
+                      children: [
+                        const Icon(Icons.newspaper_rounded, size: 60, color: primaryColor),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Create Account',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Join Newsly to stay updated',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                  // Email
+                  // 2. EMAIL FIELD
+                  const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
-                      hintText: 'Email',
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: Icon(Icons.email),
+                    validator: (value) => Validators.validateEmail(value),
+                    decoration: _buildInputDecoration(
+                      hint: 'yourname@example.com',
+                      icon: Icons.alternate_email_rounded,
+                      color: primaryColor,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email is required';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
 
-                  // Password
+                  // 3. PASSWORD FIELD
+                  const Text('Password', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Password',
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: Icon(Icons.lock),
+                    obscureText: _obscurePassword,
+                    validator: (value) => Validators.validateStrongPassword(value),
+                    decoration: _buildInputDecoration(
+                      hint: 'Create a strong password',
+                      icon: Icons.lock_outline_rounded,
+                      color: primaryColor,
+                    ).copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Password is required';
-                      }
-                      return validateStrongPassword(value);
-                    },
                   ),
                   const SizedBox(height: 16),
 
-                  // Confirm Password
+                  // 4. CONFIRM PASSWORD FIELD
+                  const Text('Confirm Password', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Confirm Password',
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
+                    obscureText: _obscureConfirm,
                     validator: (value) {
                       if (value != _passwordController.text) {
                         return 'Passwords do not match';
                       }
                       return null;
                     },
+                    decoration: _buildInputDecoration(
+                      hint: 'Repeat your password',
+                      icon: Icons.lock_reset_rounded,
+                      color: primaryColor,
+                    ).copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 5. REGISTER BUTTON
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      )
+                          : const Text(
+                        'Register',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Register Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : const Text('Register'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  TextButton(
-                    onPressed: () {
-                      context.go('/login');
-                    },
-                    child: const Text(
-                      'Already have an account? Login',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                  // 6. LOGIN PROMPT
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Already have an account? ", style: TextStyle(color: Colors.grey[600])),
+                      GestureDetector(
+                        onTap: () => context.go('/login'),
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -136,36 +196,42 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // Consistent Input Helper
+  InputDecoration _buildInputDecoration({required String hint, required IconData icon, required Color color}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, color: color, size: 20),
+      filled: true,
+      fillColor: Colors.grey[50],
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: 2),
+      ),
+    );
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
-
     try {
       final auth = FirebaseAuth.instance;
-
-      // 1️⃣ Create user
+      // 1. Create user
       await auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      // 2. Set profile defaults
+      await auth.currentUser?.updatePhotoURL('https://i.pravatar.cc/300');
+      await auth.currentUser?.updateDisplayName('Newsly User');
 
-      // 2️⃣ SET DEFAULT PROFILE IMAGE 👇 (HERE)
-      await FirebaseAuth.instance.currentUser?.updatePhotoURL(
-        'https://i.pravatar.cc/300',
-      );
-
-      // 3️⃣ (Optional) set display name
-      await FirebaseAuth.instance.currentUser?.updateDisplayName('Newsly User');
-
-      // 4️⃣ Navigate to onboarding / home
-      if (mounted) {
-        context.go('/onboarding');
-      }
+      if (mounted) context.go('/onboarding');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
